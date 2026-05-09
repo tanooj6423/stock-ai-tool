@@ -7,6 +7,14 @@ sentiment_model = pipeline(
     tokenizer="ProsusAI/finbert"
 )
 
+TICKER_NAMES = {
+    "RELIANCE.NS": "Reliance Industries",
+    "TCS.NS": "Tata Consultancy Services",
+    "INFY.NS": "Infosys",
+    "HDFCBANK.NS": "HDFC Bank",
+    "WIPRO.NS": "Wipro"
+}
+
 def get_sentiment(texts):
     if not texts:
         return "neutral", 0.0
@@ -19,8 +27,8 @@ def get_sentiment(texts):
     return dominant, round(confidence, 3)
 
 def get_news_sentiment(ticker):
-    clean = ticker.replace(".NS", "")
-    url = f"https://query2.finance.yahoo.com/v1/finance/search?q={clean}&newsCount=5"
+    company = TICKER_NAMES.get(ticker, ticker.replace(".NS", ""))
+    url = f"https://query2.finance.yahoo.com/v1/finance/search?q={company}&newsCount=5&region=IN"
     headers = {"User-Agent": "Mozilla/5.0"}
     try:
         resp = requests.get(url, headers=headers, timeout=5)
@@ -32,10 +40,3 @@ def get_news_sentiment(ticker):
         return sentiment, confidence, headlines
     except Exception as e:
         return "neutral", 0.0, []
-
-if __name__ == "__main__":
-    sentiment, confidence, headlines = get_news_sentiment("RELIANCE.NS")
-    print(f"Sentiment: {sentiment} | Confidence: {confidence:.1%}")
-    print("\nHeadlines analysed:")
-    for h in headlines:
-        print(f"  - {h}")
