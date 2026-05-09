@@ -1,0 +1,41 @@
+from transformers import pipeline
+import requests
+
+sentiment_model = pipeline(
+    "text-classification",
+    model="ProsusAI/finbert",
+    tokenizer="ProsusAI/finbert"
+)
+
+def get_sentiment(texts):
+    if not texts:
+        return "neutral", 0.0
+    results = sentiment_model(texts[:5], truncation=True, max_length=512)
+    scores = {"positive": 0, "negative": 0, "neutral": 0}
+    for r in results:
+        scores[r["label"].lower()] += r["score"]
+    dominant = max(scores, key=scores.get)
+    confidence = scores[dominant] / len(results)
+    return dominant, round(confidence, 3)
+
+def get_news_sentiment(ticker):
+    clean = ticker.replace(".NS", "")
+    url = f"https://query2.finance.yahoo.com/v1/finance/search?q={clean}&newsCount=5"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    try:
+        resp = requests.get(url, headers=headers, timeout=5)
+        news = resp.json().get("news", [])
+        headlines = [n["title"] for n in news if "title" in n]
+        if not headlines:
+            return "neutral", 0.0, []
+        sentiment, confidence = get_sentiment(headlines)
+        return sentiment, confidence, headlines
+    except Exception as e:
+        return "neutral", 0.0, []
+
+if __name__ == "__main__":
+    sentiment, confidence, headlines = get_news_sentiment("RELIANCE.NS")
+    print(f"Sentiment: {sentiment} | Confidence: {confidence:.1%}")
+    print("\nHeadlines analysed:")
+    for h in headlines:
+        print(f"  - {h}")
