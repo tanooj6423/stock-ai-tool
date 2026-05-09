@@ -1,9 +1,11 @@
 import yfinance as yf
 import pandas as pd
 import ta
+import streamlit as st
 
 WATCHLIST = ["RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "WIPRO.NS"]
 
+@st.cache_data(ttl=3600)
 def get_stock_data(ticker, period="6mo"):
     stock = yf.Ticker(ticker)
     df = stock.history(period=period)
@@ -32,8 +34,3 @@ def get_all_stocks():
         except Exception as e:
             print(f"{ticker}: failed — {e}")
     return all_data
-
-if __name__ == "__main__":
-    data = get_all_stocks()
-    print("\nSample — RELIANCE indicators:")
-    print(data["RELIANCE.NS"][["Close","RSI","MACD","SMA_20","SMA_50"]].tail())
